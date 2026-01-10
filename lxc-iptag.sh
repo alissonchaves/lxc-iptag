@@ -140,7 +140,6 @@ CIDR_LIST=(
 )
 
 # Interval settings (in seconds)
-LOOP_INTERVAL=60
 FW_NET_INTERFACE_CHECK_INTERVAL=60
 LXC_STATUS_CHECK_INTERVAL=-1
 FORCE_UPDATE_INTERVAL=1800
@@ -381,7 +380,7 @@ Description=LXC IP-Tag timer
 
 [Timer]
 OnBootSec=1min
-OnUnitActiveSec=1min
+OnUnitActiveSec=300s
 Unit=lxc-iptag.service
 
 [Install]
