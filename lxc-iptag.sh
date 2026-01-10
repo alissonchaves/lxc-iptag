@@ -150,8 +150,9 @@ else
 fi
 
 msg_info "Setup Main Function"
-if [[ ! -f /opt/lxc-iptag/lxc-iptag ]]; then
-  cat <<'EOF' >/opt/lxc-iptag/lxc-iptag
+MAIN_FILE="/opt/lxc-iptag/lxc-iptag"
+
+cat <<'EOF' >"$MAIN_FILE"
 #!/bin/bash
 
 # =============== CONFIGURATION =============== #
@@ -318,11 +319,8 @@ main() {
 
 main
 EOF
-  msg_ok "Setup Main Function"
-else
-  msg_ok "Main Function already exists"
-fi
-chmod +x /opt/lxc-iptag/lxc-iptag
+msg_ok "Setup Main Function"
+chmod +x "$MAIN_FILE"
 
 msg_info "Installing / Updating systemd service"
 
