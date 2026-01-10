@@ -326,7 +326,8 @@ msg_info "Installing / Updating systemd service"
 
 SERVICE_FILE="/lib/systemd/system/lxc-iptag.service"
 
-EXPECTED_SERVICE_CONTENT='[Unit]
+cat <<'EOF' >"$SERVICE_FILE"
+[Unit]
 Description=LXC IP-Tag service
 After=network-online.target
 Wants=network-online.target
@@ -337,42 +338,15 @@ ExecStart=/opt/lxc-iptag/lxc-iptag
 
 [Install]
 WantedBy=multi-user.target
-'
-
-NEED_UPDATE=false
-
-# Check if service exists
-if [[ -f "$SERVICE_FILE" ]]; then
-  # Validate critical directives
-  if ! grep -q '^Type=oneshot' "$SERVICE_FILE" \
-     || grep -q '^Restart=' "$SERVICE_FILE"; then
-    NEED_UPDATE=true
-  fi
-else
-  NEED_UPDATE=true
-fi
-
-if [[ "$NEED_UPDATE" == true ]]; then
-  msg_info "Correcting lxc-iptag systemd service definition"
-
-  systemctl stop lxc-iptag.service 2>/dev/null || true
-  systemctl disable lxc-iptag.service 2>/dev/null || true
-
-  cat <<EOF >"$SERVICE_FILE"
-$EXPECTED_SERVICE_CONTENT
 EOF
 
-  systemctl daemon-reload
-  systemctl reset-failed lxc-iptag.service 2>/dev/null || true
-
-  msg_ok "systemd service installed / corrected"
-else
-  msg_ok "systemd service already correct"
-fi
+systemctl daemon-reload
+systemctl reset-failed lxc-iptag.service 2>/dev/null || true
+msg_ok "systemd service installed / corrected"
 
 msg_info "Creating Timer"
-if [[ ! -f /lib/systemd/system/lxc-iptag.timer ]]; then
-  cat <<EOF >/lib/systemd/system/lxc-iptag.timer
+msg_info "Installing / Updating systemd timer"
+cat <<'EOF' >/lib/systemd/system/lxc-iptag.timer
 [Unit]
 Description=LXC IP-Tag timer
 
@@ -384,10 +358,7 @@ Unit=lxc-iptag.service
 [Install]
 WantedBy=timers.target
 EOF
-  msg_ok "Created Timer"
-else
-  msg_ok "Timer already exists."
-fi
+msg_ok "systemd timer installed / corrected"
 
 msg_ok "Setup IP-Tag Scripts"
 
