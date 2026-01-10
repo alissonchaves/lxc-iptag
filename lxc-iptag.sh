@@ -325,24 +325,52 @@ else
 fi
 chmod +x /opt/lxc-iptag/lxc-iptag
 
-msg_info "Creating Service"
-if [[ ! -f /lib/systemd/system/lxc-iptag.service ]]; then
-  cat <<EOF >/lib/systemd/system/lxc-iptag.service
-[Unit]
+msg_info "Installing / Updating systemd service"
+
+SERVICE_FILE="/lib/systemd/system/lxc-iptag.service"
+
+EXPECTED_SERVICE_CONTENT='[Unit]
 Description=LXC IP-Tag service
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=oneshot
 ExecStart=/opt/lxc-iptag/lxc-iptag
-RemainAfterExit=no
 
 [Install]
 WantedBy=multi-user.target
-EOF
-  msg_ok "Created Service"
+'
+
+NEED_UPDATE=false
+
+# Check if service exists
+if [[ -f "$SERVICE_FILE" ]]; then
+  # Validate critical directives
+  if ! grep -q '^Type=oneshot' "$SERVICE_FILE" \
+     || grep -q '^Restart=' "$SERVICE_FILE"; then
+    NEED_UPDATE=true
+  fi
 else
-  msg_ok "Service already exists."
+  NEED_UPDATE=true
+fi
+
+if [[ "$NEED_UPDATE" == true ]]; then
+  msg_info "Correcting lxc-iptag systemd service definition"
+
+  systemctl stop lxc-iptag.service 2>/dev/null || true
+  systemctl disable lxc-iptag.service 2>/dev/null || true
+
+  cat <<EOF >"$SERVICE_FILE"
+$EXPECTED_SERVICE_CONTENT
+EOF
+
+  systemctl daemon-reload
+  systemctl reset-failed lxc-iptag.service 2>/dev/null || true
+
+  msg_ok "systemd service installed / corrected"
+else
+  msg_ok "systemd service already correct"
 fi
 
 msg_info "Creating Timer"
