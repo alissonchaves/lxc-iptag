@@ -314,10 +314,7 @@ check() {
 
 # main: Set the IP tags for all LXC containers
 main() {
-  while true; do
-    check
-    sleep "${LOOP_INTERVAL}"
-  done
+  check
 }
 
 main
@@ -336,9 +333,9 @@ Description=LXC IP-Tag service
 After=network.target
 
 [Service]
-Type=simple
+Type=oneshot
 ExecStart=/opt/lxc-iptag/lxc-iptag
-Restart=always
+RemainAfterExit=no
 
 [Install]
 WantedBy=multi-user.target
@@ -348,11 +345,30 @@ else
   msg_ok "Service already exists."
 fi
 
+msg_info "Creating Timer"
+if [[ ! -f /lib/systemd/system/lxc-iptag.timer ]]; then
+  cat <<EOF >/lib/systemd/system/lxc-iptag.timer
+[Unit]
+Description=LXC IP-Tag timer
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+Unit=lxc-iptag.service
+
+[Install]
+WantedBy=timers.target
+EOF
+  msg_ok "Created Timer"
+else
+  msg_ok "Timer already exists."
+fi
+
 msg_ok "Setup IP-Tag Scripts"
 
-msg_info "Starting Service"
+msg_info "Starting Timer"
 systemctl daemon-reload &>/dev/null
-systemctl enable -q --now lxc-iptag.service &>/dev/null
-msg_ok "Started Service"
+systemctl enable -q --now lxc-iptag.timer &>/dev/null
+msg_ok "Started Timer"
 SPINNER_PID=""
 echo -e "\n${APP} installation completed successfully! ${CL}\n"
